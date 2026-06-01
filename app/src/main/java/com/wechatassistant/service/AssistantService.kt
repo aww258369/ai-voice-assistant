@@ -199,7 +199,13 @@ class AssistantService : AccessibilityService() {
         val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
         clipboard.setPrimaryClip(android.content.ClipData.newPlainText("label", text))
         handler.postDelayed({
-            performGlobalAction(GLOBAL_ACTION_PASTE).also { callback(it) }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_PASTE)
+                    .also { callback(it) }
+            } else {
+                // 低版本无法全局粘贴，用提示替代
+                callback(false)
+            }
         }, 500)
     }
 
