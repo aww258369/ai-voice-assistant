@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AI 语音助手</string>
+    <string name="accessibility_service_desc">AI 语音助手使用无障碍服务来模拟点击、滑动等操作，帮助您控制手机。此服务仅在您发出语音指令时执行动作，不会收集任何个人信息。</string>
+    <string name="start_listening">开始聆听</string>
+    <string name="stop_listening">停止聆听</string>
+    <string name="processing">正在处理...</string>
+    <string name="listening_hint">点击麦克风或说「你好助手」唤醒</string>
+    <string name="settings">设置</string>
+    <string name="api_key_hint">请输入 DeepSeek API Key</string>
+    <string name="api_key_label">API 密钥</string>
+    <string name="save">保存</string>
+    <string name="service_status">服务状态</string>
+    <string name="service_running">辅助功能已开启</string>
+    <string name="service_stopped">辅助功能未开启</string>
+    <string name="open_accessibility">去开启辅助功能</string>
+    <string name="permission_required">需要开启辅助功能和悬浮窗权限</string>
+</resources>

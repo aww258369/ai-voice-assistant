@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 网络权限 (调用 DeepSeek API) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- 录音权限 (语音识别) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- 悬浮窗权限 (悬浮球) -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- 无障碍服务权限 (控制手机) -->
+    <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
+
+    <!-- 前台服务权限 (保持后台运行) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- 振动权限 (唤醒提示) -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- 屏幕锁定状态 (灭屏检测) -->
+    <uses-permission android:name="android.permission.SCREEN_OFF_WAKE_LOCK" />
+
+    <application
+        android:name=".WeChatAssistantApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AIWeChatAssistant">
+
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AIWeChatAssistant">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 无障碍服务 - 实现手机控制 -->
+        <service
+            android:name=".service.AssistantService"
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <!-- 热词唤醒服务 (前台服务,持续聆听) -->
+        <service
+            android:name=".service.HotwordService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
+    </application>
+
+</manifest>
