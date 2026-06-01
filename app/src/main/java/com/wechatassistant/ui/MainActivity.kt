@@ -11,7 +11,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import android.speech.SpeechRecognizer
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -242,10 +241,6 @@ class MainActivity : AppCompatActivity() {
                         ))
                     }.show()
             }
-        }
-        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-            Toast.makeText(this, "不支持语音识别", Toast.LENGTH_LONG).show()
-            return
         }
         voiceManager.startListening()
     }

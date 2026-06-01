@@ -49,4 +49,7 @@ dependencies {
 
     // Lifecycle
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+
+    // Vosk offline speech recognition
+    implementation("net.alphacephei:vosk-android:0.3.32")
 }
