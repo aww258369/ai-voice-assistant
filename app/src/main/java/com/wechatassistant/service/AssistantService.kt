@@ -13,6 +13,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityNodeInfo
 import com.wechatassistant.ai.DeepSeekClient
 import kotlin.math.roundToInt
 
@@ -25,7 +26,6 @@ class AssistantService : AccessibilityService() {
     private val actionReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action != ACTION_EXECUTE) return
-
             val action = intent.getStringExtra("action") ?: return
             val item = DeepSeekClient.ActionItem(
                 action = action,
@@ -36,18 +36,14 @@ class AssistantService : AccessibilityService() {
                 duration = intent.getIntExtra("duration", -1).takeIf { it >= 0 },
                 seconds = intent.getIntExtra("seconds", -1).takeIf { it >= 0 }
             )
-            executeAction(item) { /* 结果通过通知/广播返回 */ }
+            executeAction(item) {}
         }
     }
 
     override fun onCreate() {
         super.onCreate()
         registerReceiver(actionReceiver, IntentFilter(ACTION_EXECUTE),
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                RECEIVER_EXPORTED
-            } else {
-                0
-            })
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) RECEIVER_EXPORTED else 0)
     }
 
     override fun onDestroy() {
@@ -68,45 +64,24 @@ class AssistantService : AccessibilityService() {
         }
     }
 
-    override fun onInterrupt() {
-        Log.d(TAG, "服务被中断")
-    }
-
-    override fun onServiceConnected() {
-        super.onServiceConnected()
-        instance = this
-        Log.d(TAG, "辅助功能服务已连接")
-    }
-
-    // ==================== 屏幕尺寸 ====================
+    override fun onInterrupt() {}
+    override fun onServiceConnected() { super.onServiceConnected(); instance = this }
 
     private fun getScreenWidth(): Int {
         if (screenWidth == 0) {
-            val root = rootInActiveWindow
-            if (root != null) {
-                val bounds = Rect()
-                root.getBoundsInScreen(bounds)
-                screenWidth = bounds.width()
-                root.recycle()
-            }
+            val root = rootInActiveWindow ?: return 0
+            val bounds = Rect(); root.getBoundsInScreen(bounds); screenWidth = bounds.width(); root.recycle()
         }
         return screenWidth
     }
 
     private fun getScreenHeight(): Int {
         if (screenHeight == 0) {
-            val root = rootInActiveWindow
-            if (root != null) {
-                val bounds = Rect()
-                root.getBoundsInScreen(bounds)
-                screenHeight = bounds.height()
-                root.recycle()
-            }
+            val root = rootInActiveWindow ?: return 0
+            val bounds = Rect(); root.getBoundsInScreen(bounds); screenHeight = bounds.height(); root.recycle()
         }
         return screenHeight
     }
-
-    // ==================== 操作执行 ====================
 
     fun executeAction(action: DeepSeekClient.ActionItem, callback: (Boolean) -> Unit) {
         when (action.action) {
@@ -134,79 +109,69 @@ class AssistantService : AccessibilityService() {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 startActivity(intent)
                 handler.postDelayed({ callback(true) }, 2000)
-            } else {
-                callback(false)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "打开应用失败: ${e.message}")
-            callback(false)
-        }
+            } else { callback(false) }
+        } catch (e: Exception) { Log.e(TAG, "打开应用失败: ${e.message}"); callback(false) }
     }
 
     private fun tap(xRatio: Float, yRatio: Float, callback: (Boolean) -> Unit) {
         val x = (getScreenWidth().toFloat() * xRatio).roundToInt().toFloat()
         val y = (getScreenHeight().toFloat() * yRatio).roundToInt().toFloat()
-        val path = Path().apply {
-            moveTo(x, y)
-            lineTo(x + 1, y + 1)
-        }
+        val path = Path().apply { moveTo(x, y); lineTo(x + 1, y + 1) }
         val gesture = GestureDescription.Builder()
-            .addStroke(GestureDescription.StrokeDescription(path, 0, 100))
-            .build()
+            .addStroke(GestureDescription.StrokeDescription(path, 0, 100)).build()
         dispatchGesture(gesture, object : GestureResultCallback() {
             override fun onCompleted(g: GestureDescription?) { callback(true) }
             override fun onCancelled(g: GestureDescription?) { callback(false) }
         }, null)
     }
 
-    private fun swipeUp(durationMs: Int, callback: (Boolean) -> Unit) {
-        val w = getScreenWidth().toFloat()
-        val h = getScreenHeight().toFloat()
-        performSwipe(w / 2, h * 0.75f, w / 2, h * 0.25f, durationMs.toLong(), callback)
-    }
-
-    private fun swipeDown(durationMs: Int, callback: (Boolean) -> Unit) {
-        val w = getScreenWidth().toFloat()
-        val h = getScreenHeight().toFloat()
-        performSwipe(w / 2, h * 0.25f, w / 2, h * 0.75f, durationMs.toLong(), callback)
-    }
-
-    private fun swipeLeft(durationMs: Int, callback: (Boolean) -> Unit) {
+    private fun swipeUp(d: Int, cb: (Boolean) -> Unit) {
         val w = getScreenWidth().toFloat(); val h = getScreenHeight().toFloat()
-        performSwipe(w * 0.75f, h / 2, w * 0.25f, h / 2, durationMs.toLong(), callback)
-    }
-
-    private fun swipeRight(durationMs: Int, callback: (Boolean) -> Unit) {
+        performSwipe(w / 2, h * 0.75f, w / 2, h * 0.25f, d.toLong(), cb) }
+    private fun swipeDown(d: Int, cb: (Boolean) -> Unit) {
         val w = getScreenWidth().toFloat(); val h = getScreenHeight().toFloat()
-        performSwipe(w * 0.25f, h / 2, w * 0.75f, h / 2, durationMs.toLong(), callback)
-    }
+        performSwipe(w / 2, h * 0.25f, w / 2, h * 0.75f, d.toLong(), cb) }
+    private fun swipeLeft(d: Int, cb: (Boolean) -> Unit) {
+        val w = getScreenWidth().toFloat(); val h = getScreenHeight().toFloat()
+        performSwipe(w * 0.75f, h / 2, w * 0.25f, h / 2, d.toLong(), cb) }
+    private fun swipeRight(d: Int, cb: (Boolean) -> Unit) {
+        val w = getScreenWidth().toFloat(); val h = getScreenHeight().toFloat()
+        performSwipe(w * 0.25f, h / 2, w * 0.75f, h / 2, d.toLong(), cb) }
 
-    private fun performSwipe(
-        startX: Float, startY: Float, endX: Float, endY: Float,
-        durationMs: Long, callback: (Boolean) -> Unit
-    ) {
-        val path = Path().apply { moveTo(startX, startY); lineTo(endX, endY) }
+    private fun performSwipe(sx: Float, sy: Float, ex: Float, ey: Float, dur: Long, cb: (Boolean) -> Unit) {
+        val path = Path().apply { moveTo(sx, sy); lineTo(ex, ey) }
         val gesture = GestureDescription.Builder()
-            .addStroke(GestureDescription.StrokeDescription(path, 0, durationMs))
-            .build()
+            .addStroke(GestureDescription.StrokeDescription(path, 0, dur)).build()
         dispatchGesture(gesture, object : GestureResultCallback() {
-            override fun onCompleted(g: GestureDescription?) { callback(true) }
-            override fun onCancelled(g: GestureDescription?) { callback(false) }
+            override fun onCompleted(g: GestureDescription?) { cb(true) }
+            override fun onCancelled(g: GestureDescription?) { cb(false) }
         }, null)
     }
 
     private fun inputText(text: String, callback: (Boolean) -> Unit) {
+        // 复制到剪贴板
         val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
         clipboard.setPrimaryClip(android.content.ClipData.newPlainText("label", text))
+
+        // 找到当前焦点输入框 → 执行 PASTE 动作
         handler.postDelayed({
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_PASTE)
-                    .also { callback(it) }
+            val focused = findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            if (focused != null) {
+                val success = focused.performAction(AccessibilityNodeInfo.ACTION_PASTE)
+                focused.recycle()
+                callback(success)
             } else {
-                // 低版本无法全局粘贴，用提示替代
-                callback(false)
+                // 没找到焦点节点，试试全局焦点
+                val root = rootInActiveWindow
+                if (root != null) {
+                    val result = root.performAction(AccessibilityNodeInfo.ACTION_PASTE)
+                    root.recycle()
+                    callback(result)
+                } else {
+                    callback(false)
+                }
             }
-        }, 500)
+        }, 300)
     }
 
     companion object {
